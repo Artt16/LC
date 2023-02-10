@@ -12,35 +12,33 @@ namespace LC.Controllers
     {
         public string RedirectToFullLink(string? url)
         {
+            LCDbContext db = new LCDbContext();
+
             var id = string.IsNullOrEmpty(url) ? 
                 throw new SmtpException((SmtpStatusCode)404, 
                 "RedirectController don't cath the url") : 
                 url.Split('/').Last();
+
             LinkModel link;
             string route = string.Empty;
-            using (LCDbContext db = new LCDbContext())
-            {
-                link = db.Links.First(link => link.Id == id);
-            }
-            using (LCDbContext db = new LCDbContext())
-            {
-                // var links = db.Links.ToList();
-                //LinkModel link = links.First(link => link.Id == id);
-                if (link != null)
-                {
-                    route = string.IsNullOrEmpty(link.Full) ?
-                        throw new SmtpException((SmtpStatusCode)404,
-                        "RedirectController: something wrong with link.Full") :
-                        link.Full;
-                    link.NumberOfTransitions += 1;
-                    db.Links.Attach(link);
-                    db.SaveChanges();
+            link = db.Links.First(link => link.Id == id);
 
-                    if (string.IsNullOrEmpty(route)) throw new SmtpException((SmtpStatusCode)404, "Не получилось, не фартануло");
-                    
-                }
-                return route;
-            }
+            route = string.IsNullOrEmpty(link.Full) ?
+                throw new SmtpException((SmtpStatusCode)404,
+                "RedirectController: something wrong with link.Full") :
+                link.Full;
+
+            link.NumberOfTransitions += 1;
+
+            db.Links.First(x => x.Id == id).NumberOfTransitions++;
+            db.Links.Attach(link);
+            db.SaveChanges();
+
+            if (string.IsNullOrEmpty(route)) 
+                throw new SmtpException((SmtpStatusCode)404, 
+                    "Не получилось, не фартануло");
+
+            return route;
         }
     }
 }

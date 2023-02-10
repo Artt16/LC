@@ -14,23 +14,13 @@ using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddRazorPages();
 builder.Services.AddMvc();
 var app = builder.Build();
-//var options = new RewriteOptions();
-//options.AddRedirect(@"\w{9}$", new RedirectController().RedirectToFullLink().ToString());
-//app.UseRewriter(options);
 
 if (!app.Environment.IsDevelopment())
 {
 	app.UseDeveloperExceptionPage();
-}
-else
-{ 
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.    
-    app.UseHsts(); //adds the Strict-Transport-Security header.    
 }
 
 app.UseHttpsRedirection();
