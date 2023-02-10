@@ -1,0 +1,60 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Delete";
+
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <link href="~/css/style.css" rel="stylesheet" type="text/css">
+    <title>Index</title>
+</head>
+<body>    
+    <div>
+        <form action="/Home/Create" method ="post">
+            <label> Add your link for cut :</label>
+            <input type="text" name="fullLink">
+            <input type="submit" value="To cut link" />
+        </form>
+    </div>
+    <div action="/Home/Index">
+        @{ 
+            <br>@($"Your link: {ViewBag.FullLink}");
+            <br>@($"Short link: {ViewBag.ShortLink}")
+            ;
+        }
+    </div>
+    <h1>List of objects:</h1>
+    <div class="table-wrap">
+        <table class="table-body">
+            <tr>
+                <th>ID</th>
+                <th>Full link</th>
+                <th>Date Of Creating</th>
+                <th>Count</th>
+            </tr>
+            @foreach(var link in ViewBag.Links)
+            {        
+                <tr>
+                    <td>@link.Id</td>
+                    <td>@link.Full</td>
+                    <td>@link.DateOfCreating</td>
+                    <td>@link.NumberOfTransitions</td>
+                </tr>
+            }
+
+        </table>
+    </div>
+    <div>
+        <form action="/Home/Delete" method="post">
+            <label> Add the id you want to delete :</label>
+            <input type="text" name="id">
+            <input type="submit" value="Delete" />
+        </form>
+    </div>
+</body>
+</html>
