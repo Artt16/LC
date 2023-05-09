@@ -6,6 +6,7 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace LC.Controllers
 {
@@ -13,53 +14,28 @@ namespace LC.Controllers
     public class RedirectController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly LCDbContext _db;
 
-        public RedirectController(IConfiguration configuration)
+        public RedirectController(IConfiguration configuration, LCDbContext db)
         {
             _configuration = configuration;
+            _db = db;
         }
 
         [HttpGet("")]
         public async Task<IActionResult> RedirectToLongLink(string shortLink)
         {
-            string longLink = await GetLongLinkFromDatabase(shortLink);
+            var longLink = await _db.Links
+                .Where(l => shortLink.Contains(l.Id))
+                .Select(l => l.Full)
+                .FirstOrDefaultAsync();
 
-            if (string.IsNullOrEmpty(longLink))
+            if (longLink == null)
             {
                 return NotFound();
             }
 
             return Redirect(longLink);
-        }
-
-        private async Task<string> GetLongLinkFromDatabase(string shortLink)
-        {
-            using (var db = new LCDbContext())
-            {
-                var id = string.IsNullOrEmpty(shortLink) ?
-                throw new NotFoundException("RedirectController: URL не был передан") :
-                shortLink.Split('/').
-                LastOrDefault(s => !string.IsNullOrEmpty(s)) ?? 
-                throw new NotFoundException("RedirectController: короткая ссылка неверна");
-
-                var currentLink = await db.Links.FindAsync(id);
-                if (currentLink == null)
-                {
-                    throw new NotFoundException(
-                        "RedirectController: ссылка не найдена в базе данных");
-                }
-
-                currentLink.NumberOfTransitions++;
-                await db.SaveChangesAsync();
-
-                if (string.IsNullOrEmpty(currentLink.Full))
-                {
-                    throw new NotFoundException(
-                        "RedirectController: некорректная ссылка в базе данных");
-                }
-
-                return currentLink.Full;
             }
         }
     }
-}

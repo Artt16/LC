@@ -20,7 +20,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 
-// Add DbContext to the service container
 builder.Services.AddDbContext<LCDbContext>();
 
 var app = builder.Build();
@@ -51,5 +50,11 @@ app.UseEndpoints(endpoints =>
         pattern: "{shortLink}",
         defaults: new { controller = typeof(RedirectController).Name, action = nameof(RedirectController.RedirectToLongLink) });
 });
+
+using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<LCDbContext>();
+    db.Database.EnsureCreated();
+}
 
 app.Run();
