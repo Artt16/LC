@@ -58,7 +58,7 @@ namespace LC.Controllers
                         "RedirectController: некорректная ссылка в базе данных");
                 }
 
-                return currentLink.Full.ToString();
+                return currentLink.Full;
             }
         }
     }
