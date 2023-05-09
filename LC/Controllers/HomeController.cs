@@ -91,8 +91,6 @@ namespace LC.Controllers
 
             db.SaveChanges();
             return RedirectToAction("Index");
-        }
-
-        
+        }        
     }
 }

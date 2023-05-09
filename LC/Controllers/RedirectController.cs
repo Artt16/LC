@@ -1,44 +1,65 @@
 ﻿using LC.Data;
 using LC.Data.Model;
-using Microsoft.AspNetCore.Builder.Extensions;
+using LC.Exceptions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
 using System;
-using System.Net.Mail;
+using System.Linq;
 
 namespace LC.Controllers
 {
+    [Route("{shortLink}")]
     public class RedirectController : Controller
     {
-        public string RedirectToFullLink(string? url)
+        private readonly IConfiguration _configuration;
+
+        public RedirectController(IConfiguration configuration)
         {
-            LCDbContext db = new LCDbContext();
+            _configuration = configuration;
+        }
 
-            var id = string.IsNullOrEmpty(url) ? 
-                throw new SmtpException((SmtpStatusCode)404, 
-                "RedirectController don't cath the url") : 
-                url.Split('/').Last();
+        [HttpGet("")]
+        public async Task<IActionResult> RedirectToLongLink(string shortLink)
+        {
+            string longLink = await GetLongLinkFromDatabase(shortLink);
 
-            LinkModel link;
-            string route = string.Empty;
-            link = db.Links.First(link => link.Id == id);
+            if (string.IsNullOrEmpty(longLink))
+            {
+                return NotFound();
+            }
 
-            route = string.IsNullOrEmpty(link.Full) ?
-                throw new SmtpException((SmtpStatusCode)404,
-                "RedirectController: something wrong with link.Full") :
-                link.Full;
+            return Redirect(longLink);
+        }
 
-            link.NumberOfTransitions += 1;
+        private async Task<string> GetLongLinkFromDatabase(string shortLink)
+        {
+            using (var db = new LCDbContext())
+            {
+                var id = string.IsNullOrEmpty(shortLink) ?
+                throw new NotFoundException("RedirectController: URL не был передан") :
+                shortLink.Split('/').
+                LastOrDefault(s => !string.IsNullOrEmpty(s)) ?? 
+                throw new NotFoundException("RedirectController: короткая ссылка неверна");
 
-            db.Links.First(x => x.Id == id).NumberOfTransitions++;
-            db.Links.Attach(link);
-            db.SaveChanges();
+                var currentLink = await db.Links.FindAsync(id);
+                if (currentLink == null)
+                {
+                    throw new NotFoundException(
+                        "RedirectController: ссылка не найдена в базе данных");
+                }
 
-            if (string.IsNullOrEmpty(route)) 
-                throw new SmtpException((SmtpStatusCode)404, 
-                    "Не получилось, не фартануло");
+                currentLink.NumberOfTransitions++;
+                await db.SaveChangesAsync();
 
-            return route;
+                if (string.IsNullOrEmpty(currentLink.Full))
+                {
+                    throw new NotFoundException(
+                        "RedirectController: некорректная ссылка в базе данных");
+                }
+
+                return currentLink.Full.ToString();
+            }
         }
     }
 }
