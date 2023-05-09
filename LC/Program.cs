@@ -34,7 +34,7 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+
 
 app.UseRouting();
 
@@ -56,5 +56,5 @@ using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().Creat
     var db = scope.ServiceProvider.GetRequiredService<LCDbContext>();
     db.Database.EnsureCreated();
 }
-
+app.UseStaticFiles();
 app.Run();
