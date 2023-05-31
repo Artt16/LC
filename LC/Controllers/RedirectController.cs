@@ -1,44 +1,41 @@
 ﻿using LC.Data;
 using LC.Data.Model;
-using Microsoft.AspNetCore.Builder.Extensions;
+using LC.Exceptions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using System.Threading.Tasks;
 using System;
-using System.Net.Mail;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace LC.Controllers
 {
+    [Route("{shortLink}")]
     public class RedirectController : Controller
     {
-        public string RedirectToFullLink(string? url)
+        private readonly IConfiguration _configuration;
+        private readonly LCDbContext _db;
+
+        public RedirectController(IConfiguration configuration, LCDbContext db)
         {
-            LCDbContext db = new LCDbContext();
+            _configuration = configuration;
+            _db = db;
+        }
 
-            var id = string.IsNullOrEmpty(url) ? 
-                throw new SmtpException((SmtpStatusCode)404, 
-                "RedirectController don't cath the url") : 
-                url.Split('/').Last();
+        [HttpGet]
+        public async Task<IActionResult> RedirectToLongLink(string shortLink)
+        {
+            var longLink = await _db.Links
+                .Where(l => shortLink.Contains(l.Id))
+                .Select(l => l.Full)
+                .FirstOrDefaultAsync();
 
-            LinkModel link;
-            string route = string.Empty;
-            link = db.Links.First(link => link.Id == id);
+            if (longLink == null)
+            {
+                return NotFound();
+            }
 
-            route = string.IsNullOrEmpty(link.Full) ?
-                throw new SmtpException((SmtpStatusCode)404,
-                "RedirectController: something wrong with link.Full") :
-                link.Full;
-
-            link.NumberOfTransitions += 1;
-
-            db.Links.First(x => x.Id == id).NumberOfTransitions++;
-            db.Links.Attach(link);
-            db.SaveChanges();
-
-            if (string.IsNullOrEmpty(route)) 
-                throw new SmtpException((SmtpStatusCode)404, 
-                    "Не получилось, не фартануло");
-
-            return route;
+            return Redirect(longLink);
+            }
         }
     }
-}

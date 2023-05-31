@@ -7,92 +7,101 @@ using System.Net;
 
 namespace LC.Controllers
 {
-	public class HomeController : Controller
-	{
-        LCDbContext db = new LCDbContext();
-        public static string? FullLink { get; set; }
-        public static string? ShortLink { get; set; }
+    public class HomeController : Controller
+    {
+        private readonly LCDbContext _db;
+
+        public HomeController(LCDbContext db)
+        {
+            _db = db;
+        }
+
         public IActionResult Index()
-		{            
-            var links = db.Links.ToList();
+        {
+            var links = _db.Links.ToList();
             ViewBag.Links = links;
             ViewBag.ShortLink = ShortLink;
             ViewBag.FullLink = FullLink;
             return View();
-		}
-
-        private string RandomId()
-        {
-            const string hashSymbols = "0123456789abcdefghijklmnopqrstuvwxyzABSDEFGHIJKLMNOPQRSTUVWXYZ";
-            Random randomiser = new Random();
-            string hashCode = string.Empty;
-            const byte hashLength = 9;
-            for (int i = 0; i < hashLength; i++)
-            {
-                hashCode += hashSymbols[randomiser.Next(0, hashSymbols.Length)];
-            }
-            return hashCode;
         }
 
-        [HttpGet]
-        public ActionResult Delete()
+        public IActionResult Delete()
         {
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
-        public ActionResult Delete(string id)
+        public IActionResult Delete(string id)
         {
             if (id == null || id.Contains(" ") || id.Length != 9)
             {
-                return RedirectToAction("Delete");
+                return RedirectToAction(nameof(Delete));
             }
-            LinkModel? link = db.Links.Find(id);
+
+            LinkModel link = _db.Links.Find(id);
             if (link != null)
             {
-                db.Links.Remove(link);
-                db.SaveChanges();
+                _db.Links.Remove(link);
+                _db.SaveChanges();
             }
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
         public IActionResult Create()
-        {            
-            return RedirectToAction("Index");
+        {
+            return RedirectToAction(nameof(Index));
         }
+
         [HttpPost]
         public IActionResult Create(string fullLink)
         {
-            if (fullLink == null || fullLink.Contains(" ")) 
-            { 
-                return RedirectToAction("Create"); 
+            if (fullLink == null || fullLink.Contains(" "))
+            {
+                return RedirectToAction(nameof(Create));
             }
 
-            var links = db.Links.ToList();
-            string id = RandomId();
+            var links = _db.Links.ToList();
+            string id;
             const string shortLink = "http://lcs.biz/";
 
-            while (links.Any(link => link.Id == id))
+            do
             {
                 id = RandomId();
-            }
+            } while (links.Any(link => link.Id == id));
 
             FullLink = fullLink;
             ShortLink = shortLink + id;
 
-            db.Add(new LinkModel
+            var linkModel = new LinkModel
             {
                 Id = id,
                 Full = fullLink,
                 DateOfCreating = DateTime.Now,
                 NumberOfTransitions = 0
-            });
+            };
 
-            db.SaveChanges();
-            return RedirectToAction("Index");
+            _db.Links.Add(linkModel);
+            _db.SaveChanges();
+            return RedirectToAction(nameof(Index));
         }
 
-        
+        private static string RandomId()
+        {
+            const string hashSymbols = "0123456789abcdefghijklmnopqrstuvwxyzABSDEFGHIJKLMNOPQRSTUVWXYZ";
+            Random randomiser = new Random();
+            string hashCode = string.Empty;
+            const byte hashLength = 9;
+
+            for (int i = 0; i < hashLength; i++)
+            {
+                hashCode += hashSymbols[randomiser.Next(0, hashSymbols.Length)];
+            }
+
+            return hashCode;
+        }
+
+        public static string? FullLink { get; set; }
+        public static string? ShortLink { get; set; }
     }
 }
