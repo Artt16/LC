@@ -22,7 +22,7 @@ namespace LC.Controllers
             _db = db;
         }
 
-        [HttpGet("")]
+        [HttpGet]
         public async Task<IActionResult> RedirectToLongLink(string shortLink)
         {
             var longLink = await _db.Links

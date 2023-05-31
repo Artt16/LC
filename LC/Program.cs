@@ -32,13 +32,11 @@ else
 {
     app.UseExceptionHandler("/Error");
 }
+app.UseStatusCodePagesWithRedirects("/Error/{0}");
 
 app.UseHttpsRedirection();
 
-
 app.UseRouting();
-
-app.UseAuthorization();
 
 app.UseEndpoints(endpoints =>
 {
@@ -51,10 +49,10 @@ app.UseEndpoints(endpoints =>
         defaults: new { controller = typeof(RedirectController).Name, action = nameof(RedirectController.RedirectToLongLink) });
 });
 
-using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<LCDbContext>();
-    db.Database.EnsureCreated();
-}
 app.UseStaticFiles();
+//using (var scope = app.Services.GetRequiredService<IServiceScopeFactory>().CreateScope())
+//{
+//    var db = scope.ServiceProvider.GetRequiredService<LCDbContext>();
+//    db.Database.EnsureCreated();
+//}
 app.Run();
